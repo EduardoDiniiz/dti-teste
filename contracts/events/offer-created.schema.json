@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "slp.offers.created",
+  "title": "OfferCreated",
+  "description": "Publicado por Buyer e Seller (via outbox) no tópico slp.offers.created, chave PIGGY-USD.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "offerId", "side", "participantId", "price", "createdAt"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid", "description": "Deduplicação no consumidor" },
+    "offerId": { "type": "string", "format": "uuid" },
+    "side": { "type": "string", "enum": ["BUY", "SELL"] },
+    "participantId": { "type": "string", "format": "uuid", "description": "buyerId ou sellerId" },
+    "price": { "type": "number", "exclusiveMinimum": 0, "multipleOf": 0.01, "description": "USD por 1 Piggy" },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}

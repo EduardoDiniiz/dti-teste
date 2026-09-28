@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "slp.trades.executed",
+  "title": "TradeExecuted",
+  "description": "Publicado pelo Coordinator quando há match. Buyer e Seller consomem e marcam a oferta como EXECUTED.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "tradeId", "buyOfferId", "sellOfferId", "buyerId", "sellerId", "price", "executedAt"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid" },
+    "tradeId": { "type": "string", "format": "uuid" },
+    "buyOfferId": { "type": "string", "format": "uuid" },
+    "sellOfferId": { "type": "string", "format": "uuid" },
+    "buyerId": { "type": "string", "format": "uuid" },
+    "sellerId": { "type": "string", "format": "uuid" },
+    "price": { "type": "number", "exclusiveMinimum": 0, "multipleOf": 0.01, "description": "Média das duas ofertas, USD por 1 Piggy" },
+    "executedAt": { "type": "string", "format": "date-time" }
+  }
+}
