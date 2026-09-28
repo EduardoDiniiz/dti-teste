@@ -41,9 +41,9 @@ class BuyOfferApiTest extends IntegrationTest {
         assertThat(get(offerId)).containsEntry("offerId", offerId).containsEntry("buyerId", buyerId.toString())
                 .containsEntry("status", "PENDING").containsEntry("priceUsd", "30.00");
 
-        try (KafkaTestClient kafka = new KafkaTestClient(List.of("slp.offers.v1"))) {
+        try (KafkaTestClient kafka = new KafkaTestClient(List.of("slp.exchange-rate.updated"))) {
             await().atMost(Duration.ofSeconds(20)).pollInSameThread().untilAsserted(() ->
-                    assertThat(kafka.records("slp.offers.v1"))
+                    assertThat(kafka.records("slp.exchange-rate.updated"))
                             .anySatisfy(r -> {
                                 assertThat(r.key()).isEqualTo("PIGGY-USD");
                                 assertThat(r.value()).contains("\"eventType\":\"BuyOfferCreated\"")
