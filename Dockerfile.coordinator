@@ -1,0 +1,6 @@
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+COPY target/slp-0.1.jar /app/slp.jar
+USER 10001:10001
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/slp.jar"]

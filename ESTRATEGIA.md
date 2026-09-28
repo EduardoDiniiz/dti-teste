@@ -17,6 +17,82 @@
 - **Ordem:** `slp.offers.created` usa a chave fixa `PIGGY-USD` → uma partição → o Coordinator processa
   uma oferta por vez, sem corrida no livro de ofertas.
 
+## Domínios
+
+Três contextos delimitados. Cada um é **dono dos próprios dados** (nenhum lê tabela do outro) e só conversa
+com os outros por **evento**. Linguagem comum: *oferta* (1 Piggy a um preço em USD), *match*, *trade*
+(a execução), *taxa* (USD por Piggy).
+
+### 1. Buyer — ofertas de compra (`co.inter.piggies.buyer`) · Dev 1
+
+**Responsabilidade:** porta de entrada do comprador. Recebe a intenção de compra, guarda e informa o
+status. **Não** decide match, **não** mexe em carteira e **não** conhece ofertas de venda.
+
+| | |
+|---|---|
+| Agregado | `BuyOffer` — `id`, `buyerId`, `price`, `status`, `tradeId`, `executedPrice`, `createdAt`, `executedAt`, `version` |
+| Estados | `OPEN` → `EXECUTED` (sem volta; sem cancelamento) |
+| Invariantes | `price > 0` com até 2 casas · `buyerId` obrigatório · só `OPEN` pode virar `EXECUTED` · executar de novo com o mesmo `tradeId` não faz nada (idempotente) |
+| Casos de uso (port/in) | `CreateBuyOfferUseCase.create(buyerId, price)` · `GetBuyOfferUseCase.get(id)` · `MarkBuyOfferExecutedUseCase.markExecuted(offerId, tradeId, price, executedAt)` |
+| Portas de saída (port/out) | `BuyOfferRepository` · `BuyOfferEventPublisher` (adapter usa `OutboxWriter`) |
+| API | `POST /buy-offers` → 202 + Location · `GET /buy-offers/{id}` → 200/404 |
+| Publica | `OfferCreated` com `side = BUY` em `slp.offers.created` (chave `PIGGY-USD`) |
+| Consome | `TradeExecuted` (group `slp-buyer`) → se `buyOfferId` for dele, `markExecuted`; senão ignora |
+| Tabela | `buy_offers` |
+
+### 2. Seller — ofertas de venda (`co.inter.piggies.seller`) · Dev 2
+
+**Responsabilidade:** espelho do Buyer para o vendedor. Mesmas regras, trocando o lado.
+
+| | |
+|---|---|
+| Agregado | `SellOffer` — `id`, `sellerId`, `price`, `status`, `tradeId`, `executedPrice`, `createdAt`, `executedAt`, `version` |
+| Estados | `OPEN` → `EXECUTED` |
+| Invariantes | iguais às do Buyer (com `sellerId`) |
+| Casos de uso (port/in) | `CreateSellOfferUseCase` · `GetSellOfferUseCase` · `MarkSellOfferExecutedUseCase` |
+| Portas de saída (port/out) | `SellOfferRepository` · `SellOfferEventPublisher` |
+| API | `POST /sell-offers` → 202 + Location · `GET /sell-offers/{id}` → 200/404 |
+| Publica | `OfferCreated` com `side = SELL` em `slp.offers.created` (chave `PIGGY-USD`) |
+| Consome | `TradeExecuted` (group `slp-seller`) → se `sellOfferId` for dele, `markExecuted` |
+| Tabela | `sell_offers` |
+
+> Por que Buyer e Seller são separados, se são parecidos? O enunciado pede um ponto de entrada para cada
+> lado, e cada um evolui sozinho (ex.: regras de KYC ou limites diferentes para quem compra e quem vende).
+
+### 3. Coordinator — livro de ofertas e transações (`co.inter.piggies.coordinator`) · Dev 3
+
+**Responsabilidade:** o "pregão". Mantém o livro de ofertas abertas, **decide o match**, executa o
+débito/crédito de Piggies e publica o resultado. **Não** tem API REST pública e **não** é dono do status
+que o cliente vê (isso é do Buyer/Seller).
+
+| | |
+|---|---|
+| Modelos | `Offer` (cópia da oferta no livro: `id`, `side`, `participantId`, `price`, `status OPEN/MATCHED`, `createdAt`) · `Trade` (`id`, `buyOfferId`, `sellOfferId`, `buyerId`, `sellerId`, `price`, `executedAt`) · `WalletEntry` (`participantId`, `asset = PIGGY`, `amount ±1`, `tradeId`) · `Side {BUY, SELL}` |
+| Regra central (domínio puro) | `MatchingEngine` — match se `compra >= venda`; preço = `(compra + venda) / 2`, escala 2, `HALF_EVEN`; prioridade: melhor preço, depois a mais antiga |
+| Invariantes | uma oferta entra em no máximo **um** trade (`UNIQUE` em `buy_offer_id` e `sell_offer_id`) · só oferta `OPEN` casa · cada trade gera exatamente −1 PIGGY para o vendedor e +1 para o comprador |
+| Caso de uso (port/in) | `ProcessOfferUseCase.process(offer)` — registra no livro, procura contraparte, executa o trade se houver |
+| Portas de saída (port/out) | `OrderBookRepository` (salvar oferta, melhor contraparte aberta, marcar `MATCHED`) · `TradeRepository` · `WalletRepository` (ledger) · `CoordinatorEventPublisher` |
+| Consome | `OfferCreated` (group `slp-coordinator`), deduplicando por `eventId` |
+| Publica | `TradeExecuted` em `slp.trades.executed` (chave `tradeId`) · `ExchangeRateUpdated` em `slp.exchange-rate.updated` (chave `PIGGY-USD`) |
+| Tabelas | `offers`, `trades`, `wallet_entries` |
+
+### Compartilhado (não é domínio)
+
+| Pacote | O que tem | Quem pode mudar |
+|---|---|---|
+| `contracts` | `Topics` e os records das 3 mensagens: a **linguagem publicada** entre os domínios, espelho de `contracts/events/*.schema.json` | os três, combinando |
+| `shared` | infra técnica: outbox, relay, producer, transação, idempotência, relógio | os três, combinando |
+
+### Quem é dono de quê (resumo)
+
+| Pergunta | Dono |
+|---|---|
+| "Minha oferta foi executada? Por quanto?" | Buyer / Seller (`GET`) |
+| "Essas duas ofertas casam? Qual o preço?" | Coordinator (`MatchingEngine`) |
+| "Quantos Piggies o participante tem?" | Coordinator (`wallet_entries`) |
+| "Qual a taxa USD/Piggy atual?" | Coordinator (publica `ExchangeRateUpdated`) |
+| "O formato do evento" | `contracts` (JSON Schema + records) |
+
 ## Fluxo de eventos
 
 ```

@@ -32,8 +32,17 @@ Stack: Java 25, Micronaut 5.1.5, Maven, Micronaut Data JPA, PostgreSQL 16, Flywa
 
 ```bash
 podman compose up -d     # Postgres + Kafka
-./mvnw mn:run            # porta 8080
+./mvnw mn:run            # porta 8081
 ./mvnw test              # o Testcontainers sobe Postgres e Kafka
 ```
 
-Com Podman no Windows, o Testcontainers precisa enxergar o socket: `podman machine` rodando e, se necessário, `TESTCONTAINERS_RYUK_DISABLED=true`.
+Com Podman no Windows (testado), antes do `./mvnw test`:
+
+```bash
+export DOCKER_HOST="npipe:////./pipe/podman-machine-default"
+export TESTCONTAINERS_RYUK_DISABLED=true
+```
+
+## Coordinator implementado
+
+O módulo Coordinator e seus testes estão documentados em [docs/COORDINATOR.md](docs/COORDINATOR.md). O ambiente Docker dedicado usa `docker-compose.coordinator.yml` (aplicação 8083, PostgreSQL 55433 e Kafka 59093), preservando o Compose original da equipe. `scripts/coordinator-demo.ps1` envia ofertas diretamente ao Kafka e verifica trade, ledger e eventos; não depende dos endpoints Buyer/Seller. A implementação segue os contratos novos de `contracts/README.md`, com média HALF_EVEN em duas casas e ledger sem validação de saldo.
