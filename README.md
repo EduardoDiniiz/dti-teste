@@ -32,8 +32,13 @@ Stack: Java 25, Micronaut 5.1.5, Maven, Micronaut Data JPA, PostgreSQL 16, Flywa
 
 ```bash
 podman compose up -d     # Postgres + Kafka
-./mvnw mn:run            # porta 8080
+./mvnw mn:run            # porta 8081
 ./mvnw test              # o Testcontainers sobe Postgres e Kafka
 ```
 
-Com Podman no Windows, o Testcontainers precisa enxergar o socket: `podman machine` rodando e, se necessário, `TESTCONTAINERS_RYUK_DISABLED=true`.
+Com Podman no Windows (testado), antes do `./mvnw test`:
+
+```bash
+export DOCKER_HOST="npipe:////./pipe/podman-machine-default"
+export TESTCONTAINERS_RYUK_DISABLED=true
+```
