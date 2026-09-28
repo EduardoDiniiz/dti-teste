@@ -288,9 +288,6 @@
           },
           {
             "$ref": "#/components/schemas/ExecutedOffer"
-          },
-          {
-            "$ref": "#/components/schemas/RejectedOffer"
           }
         ]
       },
@@ -369,52 +366,6 @@
           "status",
           "transactionId",
           "executionPriceUsd"
-        ]
-      },
-      "RejectedOffer": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "offerId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "buyerId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "priceUsd": {
-            "type": "string",
-            "pattern": "^(?!0(?:\\.0{1,2})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,2})?$",
-            "description": "USD positivo; até 12 dígitos inteiros e 2 casas decimais; sem expoente. Converter com BigDecimal."
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "status": {
-            "const": "REJECTED"
-          },
-          "rejectionCode": {
-            "type": "string",
-            "enum": [
-              "INSUFFICIENT_PIGGY_BALANCE",
-              "PARTICIPANT_NOT_FOUND"
-            ]
-          },
-          "rejectionReason": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "required": [
-          "offerId",
-          "buyerId",
-          "priceUsd",
-          "createdAt",
-          "status",
-          "rejectionCode",
-          "rejectionReason"
         ]
       },
       "Problem": {

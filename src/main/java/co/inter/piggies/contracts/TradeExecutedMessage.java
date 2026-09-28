@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Contrato: contracts/events/trade-executed.schema.json (tópico slp.trades.executed). */
+/** Contrato compartilhado legado; o evento v1 equivalente é TransactionCompleted. */
 @Serdeable
 public record TradeExecutedMessage(UUID eventId, UUID tradeId, UUID buyOfferId, UUID sellOfferId, UUID buyerId,
                                    UUID sellerId, BigDecimal price, Instant executedAt) {

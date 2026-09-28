@@ -54,7 +54,6 @@ for party in ['buyer','seller']:
     check(s('Offer'), pending)
     check(s('Offer'), {**pending,'status':'EXECUTED'},False)
     check(s('Offer'), {**pending,'status':'REJECTED'},False)
-    check(s('Offer'), {**pending,'status':'REJECTED','rejectionCode':'PARTICIPANT_NOT_FOUND','rejectionReason':'Ausente'})
 
 coordinator = C / 'coordinator.schema.json'
 for filename in ['buy-offer-created','sell-offer-created']:

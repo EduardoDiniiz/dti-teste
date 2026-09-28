@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Contrato: contracts/events/offer-created.schema.json (tópico slp.offers.created). side = BUY | SELL. */
+/** Contrato compartilhado legado; os eventos v1 usam envelopes específicos por lado. */
 @Serdeable
 public record OfferCreatedMessage(UUID eventId, UUID offerId, String side, UUID participantId, BigDecimal price,
                                   Instant createdAt) {

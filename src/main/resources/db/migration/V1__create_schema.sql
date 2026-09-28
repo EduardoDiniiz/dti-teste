@@ -5,12 +5,13 @@ CREATE TABLE buy_offers (
     buyer_id        UUID           NOT NULL,
     price           NUMERIC(19, 2) NOT NULL CHECK (price > 0),
     status          VARCHAR(20)    NOT NULL,
-    trade_id        UUID,
-    executed_price  NUMERIC(19, 2),
+    transaction_id  UUID,
+    execution_price NUMERIC(19, 3),
     created_at      TIMESTAMP(6) WITH TIME ZONE NOT NULL,
     executed_at     TIMESTAMP(6) WITH TIME ZONE,
     idempotency_key VARCHAR(100) UNIQUE,
-    version         BIGINT         NOT NULL
+    version         BIGINT         NOT NULL,
+    CONSTRAINT buy_offers_status_check CHECK (status IN ('PENDING', 'EXECUTED'))
 );
 
 -- ===== seller: ofertas de venda
