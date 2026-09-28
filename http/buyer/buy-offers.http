@@ -1,0 +1,33 @@
+### SLP — Buyer (rodar com ./mvnw mn:run; porta 8081)
+### Cenário do enunciado: vendedor A $20 (seller) · comprador B $10 (sem match) · comprador C $30 (match a $25)
+
+### 1) Comprador B oferece $10 → 202 + Location
+POST http://localhost:8081/buy-offers
+Content-Type: application/json
+
+< ./compra-b-10.json
+
+> {% client.global.set("offerB", response.body.offerId); %}
+
+### 2) Comprador C oferece $30 → 202 + Location
+POST http://localhost:8081/buy-offers
+Content-Type: application/json
+
+< ./compra-c-30.json
+
+> {% client.global.set("offerC", response.body.offerId); %}
+
+### 3) Consultar lance B → PENDING (não há venda <= 10)
+GET http://localhost:8081/buy-offers/{{offerB}}
+
+### 4) Consultar lance C → PENDING até o coordinator juntar com a venda de $20; depois EXECUTED a 25.000
+GET http://localhost:8081/buy-offers/{{offerC}}
+
+### 5) Preço inválido (3 casas) → 400 problem+json
+POST http://localhost:8081/buy-offers
+Content-Type: application/json
+
+< ./compra-invalida.json
+
+### 6) Oferta inexistente → 404 OFFER_NOT_FOUND
+GET http://localhost:8081/buy-offers/00000000-0000-4000-8000-000000000000
