@@ -1,76 +1,47 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "slp.exchange-rate.updated",
   "title": "ExchangeRateUpdated",
-  "description": "Evento v1. Deduplicar por eventId; retries preservam ID, data e payload. Regras entre campos exigem testes de negócio.",
+  "description": "Publicado pelo Coordinator via outbox, tópico slp.exchange-rate.updated, chave PIGGY-USD. Formato alinhado ao record ExchangeRateUpdatedMessage da equipe.",
   "type": "object",
   "additionalProperties": false,
+  "required": [
+    "eventId",
+    "tradeId",
+    "pair",
+    "rate",
+    "occurredAt"
+  ],
   "properties": {
     "eventId": {
       "type": "string",
       "format": "uuid"
     },
-    "eventType": {
-      "const": "ExchangeRateUpdated"
+    "tradeId": {
+      "type": "string",
+      "format": "uuid"
     },
-    "schemaVersion": {
-      "const": 1
+    "pair": {
+      "const": "PIGGY-USD"
+    },
+    "rate": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "multipleOf": 0.01,
+      "description": "Média com escala 2 e HALF_EVEN, conforme RN03."
     },
     "occurredAt": {
       "type": "string",
       "format": "date-time"
-    },
-    "payload": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "transactionId": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "baseCurrency": {
-          "const": "PIGGY"
-        },
-        "quoteCurrency": {
-          "const": "USD"
-        },
-        "rate": {
-          "type": "string",
-          "pattern": "^(?!0(?:\\.0{1,3})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,3})?$",
-          "description": "USD positivo; até 12 dígitos inteiros e 3 casas decimais; sem expoente. Converter com BigDecimal."
-        },
-        "quantity": {
-          "const": 1
-        }
-      },
-      "required": [
-        "transactionId",
-        "baseCurrency",
-        "quoteCurrency",
-        "rate",
-        "quantity"
-      ]
     }
   },
-  "required": [
-    "eventId",
-    "eventType",
-    "schemaVersion",
-    "occurredAt",
-    "payload"
-  ],
   "examples": [
     {
       "eventId": "44444444-4444-4444-8444-444444444444",
-      "eventType": "ExchangeRateUpdated",
-      "schemaVersion": 1,
-      "occurredAt": "2026-09-28T18:00:00Z",
-      "payload": {
-        "transactionId": "33333333-3333-4333-8333-333333333333",
-        "baseCurrency": "PIGGY",
-        "quoteCurrency": "USD",
-        "rate": "25.000",
-        "quantity": 1
-      }
+      "tradeId": "33333333-3333-4333-8333-333333333333",
+      "pair": "PIGGY-USD",
+      "rate": 25.0,
+      "occurredAt": "2026-09-28T18:00:00Z"
     }
   ]
 }
