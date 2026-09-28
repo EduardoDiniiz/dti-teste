@@ -1,0 +1,12 @@
+{
+  "eventId": "44444444-4444-4444-8444-444444444444",
+  "eventType": "SellOfferCreated",
+  "schemaVersion": 1,
+  "occurredAt": "2026-09-28T18:00:00Z",
+  "payload": {
+    "offerId": "22222222-2222-4222-8222-222222222222",
+    "sellerId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "priceUsd": "20.00",
+    "createdAt": "2026-09-28T18:00:00Z"
+  }
+}

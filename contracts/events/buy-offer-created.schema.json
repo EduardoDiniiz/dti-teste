@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BuyOfferCreated",
+  "description": "Evento v1. Deduplicar por eventId; retries preservam ID, data e payload. Regras entre campos exigem testes de negócio.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventType": {
+      "const": "BuyOfferCreated"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offerId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "buyerId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "priceUsd": {
+          "type": "string",
+          "pattern": "^(?!0(?:\\.0{1,2})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,2})?$",
+          "description": "USD positivo; até 12 dígitos inteiros e 2 casas decimais; sem expoente. Converter com BigDecimal."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "offerId",
+        "buyerId",
+        "priceUsd",
+        "createdAt"
+      ]
+    }
+  },
+  "required": [
+    "eventId",
+    "eventType",
+    "schemaVersion",
+    "occurredAt",
+    "payload"
+  ],
+  "examples": [
+    {
+      "eventId": "44444444-4444-4444-8444-444444444444",
+      "eventType": "BuyOfferCreated",
+      "schemaVersion": 1,
+      "occurredAt": "2026-09-28T18:00:00Z",
+      "payload": {
+        "offerId": "11111111-1111-4111-8111-111111111111",
+        "buyerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "priceUsd": "30.00",
+        "createdAt": "2026-09-28T18:00:00Z"
+      }
+    }
+  ]
+}

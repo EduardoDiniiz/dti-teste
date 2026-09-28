@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OfferRejected",
+  "description": "Evento v1. Deduplicar por eventId; retries preservam ID, data e payload. Regras entre campos exigem testes de negócio.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventType": {
+      "const": "OfferRejected"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "offerId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ]
+        },
+        "reasonCode": {
+          "type": "string",
+          "enum": [
+            "INSUFFICIENT_PIGGY_BALANCE",
+            "PARTICIPANT_NOT_FOUND"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "offerId",
+        "side",
+        "reasonCode",
+        "reason"
+      ]
+    }
+  },
+  "required": [
+    "eventId",
+    "eventType",
+    "schemaVersion",
+    "occurredAt",
+    "payload"
+  ],
+  "examples": [
+    {
+      "eventId": "44444444-4444-4444-8444-444444444444",
+      "eventType": "OfferRejected",
+      "schemaVersion": 1,
+      "occurredAt": "2026-09-28T18:00:00Z",
+      "payload": {
+        "offerId": "22222222-2222-4222-8222-222222222222",
+        "side": "SELL",
+        "reasonCode": "INSUFFICIENT_PIGGY_BALANCE",
+        "reason": "Vendedor não possui 1 Piggy disponível."
+      }
+    }
+  ]
+}

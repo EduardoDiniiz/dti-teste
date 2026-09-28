@@ -1,3 +1,7 @@
+# SLP — contratos propostos
+
+Veja [contratos, endpoints e decisões](docs/SLP-CONTRATOS.md) e [registro do uso de IA](docs/IA-CONTRATOS.md). Os endpoints ainda precisam ser implementados.
+
 ## Micronaut 5.1.5 Documentation
 
 - [User Guide](https://docs.micronaut.io/5.1.5/guide/index.html)

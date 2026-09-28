@@ -1,0 +1,79 @@
+{
+  "description": "Proposta de topologia; não cria tópicos nem configura serviços automaticamente. Uma partição por tópico no MVP.",
+  "topics": [
+    {
+      "name": "slp.exchange-rates.v1",
+      "partitions": 1,
+      "replicationFactor": 1
+    },
+    {
+      "name": "slp.offer-rejections.v1",
+      "partitions": 1,
+      "replicationFactor": 1
+    },
+    {
+      "name": "slp.offers.v1",
+      "partitions": 1,
+      "replicationFactor": 1
+    },
+    {
+      "name": "slp.transactions.v1",
+      "partitions": 1,
+      "replicationFactor": 1
+    }
+  ],
+  "consumerGroups": {
+    "PiggiesTransactionCoordinator": "slp-coordinator-v1",
+    "PiggiesBuyerService": "slp-buyer-v1",
+    "PiggiesSellerService": "slp-seller-v1"
+  },
+  "events": {
+    "BuyOfferCreated": {
+      "schema": "events/buy-offer-created.schema.json",
+      "topic": "slp.offers.v1",
+      "key": "PIGGY-USD",
+      "producer": "PiggiesBuyerService",
+      "consumers": [
+        "PiggiesTransactionCoordinator"
+      ]
+    },
+    "SellOfferCreated": {
+      "schema": "events/sell-offer-created.schema.json",
+      "topic": "slp.offers.v1",
+      "key": "PIGGY-USD",
+      "producer": "PiggiesSellerService",
+      "consumers": [
+        "PiggiesTransactionCoordinator"
+      ]
+    },
+    "TransactionCompleted": {
+      "schema": "events/transaction-completed.schema.json",
+      "topic": "slp.transactions.v1",
+      "key": "payload.transactionId",
+      "producer": "PiggiesTransactionCoordinator",
+      "consumers": [
+        "PiggiesBuyerService",
+        "PiggiesSellerService"
+      ]
+    },
+    "OfferRejected": {
+      "schema": "events/offer-rejected.schema.json",
+      "topic": "slp.offer-rejections.v1",
+      "key": "payload.side + : + payload.offerId",
+      "producer": "PiggiesTransactionCoordinator",
+      "consumers": [
+        "PiggiesBuyerService",
+        "PiggiesSellerService"
+      ]
+    },
+    "ExchangeRateUpdated": {
+      "schema": "events/exchange-rate-updated.schema.json",
+      "topic": "slp.exchange-rates.v1",
+      "key": "PIGGY-USD",
+      "producer": "PiggiesTransactionCoordinator",
+      "consumers": [
+        "Sistemas externos interessados"
+      ]
+    }
+  }
+}
