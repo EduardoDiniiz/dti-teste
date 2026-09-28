@@ -1,0 +1,88 @@
+openapi: 3.0.3
+info:
+  title: PiggiesSellerService
+  version: 1.0.0
+  description: Ponto de entrada para ofertas de venda de 1 Piggy. Assíncrono (202 + consulta de status).
+paths:
+  /sell-offers:
+    post:
+      summary: Cria oferta de venda
+      operationId: createSellOffer
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateSellOfferRequest' }
+      responses:
+        '202':
+          description: Oferta aceita; o match acontece de forma assíncrona
+          headers:
+            Location:
+              schema: { type: string, example: /sell-offers/3f2c6a1e-8b0a-4c5e-9a57-1d2b3c4d5e6f }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SellOffer' }
+        '400': { $ref: '#/components/responses/Problem' }
+  /sell-offers/{offerId}:
+    get:
+      summary: Consulta oferta de venda e seu status
+      operationId: getSellOffer
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Oferta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SellOffer' }
+        '404': { $ref: '#/components/responses/Problem' }
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Repetir a mesma chave devolve a mesma oferta, sem criar outra
+      schema: { type: string, maxLength: 100 }
+  schemas:
+    CreateSellOfferRequest:
+      type: object
+      required: [sellerId, price]
+      properties:
+        sellerId: { type: string, format: uuid }
+        price:
+          type: number
+          description: USD que o vendedor exige por 1 Piggy (até 2 casas)
+          exclusiveMinimum: true
+          minimum: 0
+          multipleOf: 0.01
+          example: 20.00
+    SellOffer:
+      type: object
+      required: [offerId, sellerId, price, status, createdAt]
+      properties:
+        offerId: { type: string, format: uuid }
+        sellerId: { type: string, format: uuid }
+        price: { type: number, example: 20.00 }
+        status: { type: string, enum: [OPEN, EXECUTED] }
+        tradeId: { type: string, format: uuid, nullable: true }
+        executedPrice: { type: number, nullable: true, example: 25.00 }
+        createdAt: { type: string, format: date-time }
+        executedAt: { type: string, format: date-time, nullable: true }
+  responses:
+    Problem:
+      description: Erro no formato RFC 9457
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              type: { type: string }
+              title: { type: string }
+              status: { type: integer }
+              detail: { type: string }

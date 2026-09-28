@@ -1,18 +1,50 @@
 micronaut:
   application:
-    name: savings
+    name: slp
+  server:
+    port: 8080
+
+app:
+  zone: America/Sao_Paulo
+
 datasources:
   default:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
-    password: ''
+    url: jdbc:postgresql://localhost:5432/slp
+    username: slp
+    password: slp
     driver-class-name: org.postgresql.Driver
     db-type: postgres
     dialect: POSTGRES
-jpa.default.properties.hibernate.hbm2ddl.auto: update
+
+# Schema versionado pelo Flyway; o Hibernate só confere se as entidades batem com as tabelas.
+flyway:
+  datasources:
+    default:
+      enabled: true
+
 jpa:
   default:
     properties:
       hibernate:
         hbm2ddl:
-          auto: update
+          auto: validate
+
+kafka:
+  bootstrap:
+    servers: localhost:9092
+  producers:
+    slp-producer:
+      enable.idempotence: true
+      retries: 3
+      delivery.timeout.ms: 10000
+      request.timeout.ms: 5000
+
+outbox:
+  relay:
+    enabled: true
+    interval: 500ms
+    batch-size: 100
+
+endpoints:
+  health:
+    details-visible: ANONYMOUS

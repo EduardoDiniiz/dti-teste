@@ -1,4 +1,8 @@
-datasources:
-  default:
-    url: jdbc:tc:postgresql:14:///postgres
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+# URLs do Postgres e do Kafka vêm dos Testcontainers (IntegrationTest implements TestPropertyProvider).
+micronaut:
+  server:
+    port: -1
+outbox:
+  relay:
+    interval: 100ms
+    initial-delay: 100ms

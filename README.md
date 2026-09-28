@@ -1,123 +1,39 @@
-## Micronaut 5.1.5 Documentation
-
-- [User Guide](https://docs.micronaut.io/5.1.5/guide/index.html)
-- [API Reference](https://docs.micronaut.io/5.1.5/api/index.html)
-- [Configuration Reference](https://docs.micronaut.io/5.1.5/guide/configurationreference.html)
-- [Micronaut Guides](https://guides.micronaut.io/index.html)
----
-
-- [Micronaut Maven Plugin documentation](https://micronaut-projects.github.io/micronaut-maven-plugin/latest/)
-## Feature serialization-jackson documentation
-
-
-- [Micronaut Serialization Jackson Core documentation](https://micronaut-projects.github.io/micronaut-serialization/latest/guide/)
-
-
-## Feature jdbc-hikari documentation
-
-
-- [Micronaut Hikari JDBC Connection Pool documentation](https://micronaut-projects.github.io/micronaut-sql/latest/guide/index.html#jdbc)
-
-
-## Feature problem-json documentation
-
-
-- [Micronaut Problem JSON documentation](https://micronaut-projects.github.io/micronaut-problem-json/latest/guide/index.html)
-
-
-## Feature lombok documentation
-
-
-- [Micronaut Project Lombok documentation](https://docs.micronaut.io/latest/guide/index.html#lombok)
-
-
-- [https://projectlombok.org/features/all](https://projectlombok.org/features/all)
-
-
-## Feature management documentation
-
-
-- [Micronaut Management documentation](https://docs.micronaut.io/latest/guide/index.html#management)
-
-
-## Feature jspecify documentation
-
-
-- [Micronaut JSpecify Nullability Annotations documentation](https://docs.micronaut.io/latest/guide/#jspecify)
-
-
-- [https://jspecify.dev/docs/start-here/](https://jspecify.dev/docs/start-here/)
-
-
-## Feature hibernate-jpa documentation
-
-
-- [Micronaut Hibernate JPA documentation](https://micronaut-projects.github.io/micronaut-sql/latest/guide/index.html#hibernate)
-
-
-## Feature kafka documentation
-
-
-- [Micronaut Kafka Messaging documentation](https://micronaut-projects.github.io/micronaut-kafka/latest/guide/index.html)
-
-
-## Feature hibernate-jpamodelgen documentation
-
-
-- [Micronaut Hibernate JPA Static Metamodel Generator documentation](https://micronaut-projects.github.io/micronaut-data/latest/guide/#typeSafeJava)
-
-
-- [https://hibernate.org/orm/tooling/](https://hibernate.org/orm/tooling/)
-
-
-## Feature testcontainers documentation
-
-
-- [https://www.testcontainers.org/](https://www.testcontainers.org/)
-
-
-## Feature micronaut-aot documentation
-
-
-- [Micronaut AOT documentation](https://micronaut-projects.github.io/micronaut-aot/latest/guide/)
-
-
-## Feature validation documentation
-
-
-- [Micronaut Validation documentation](https://micronaut-projects.github.io/micronaut-validation/latest/guide/)
-
-
-## Feature assertj documentation
-
-
-- [https://assertj.github.io/doc/](https://assertj.github.io/doc/)
-
-
-## Feature jakarta-data documentation
-
-
-- [Micronaut Jakarta Data documentation](https://micronaut-projects.github.io/micronaut-data/latest/guide/#jakartaData)
-
-
-- [https://jakarta.ee/specifications/data/1.0/jakarta-data-1.0](https://jakarta.ee/specifications/data/1.0/jakarta-data-1.0)
-
-
-## Feature awaitility documentation
-
-
-- [https://github.com/awaitility/awaitility](https://github.com/awaitility/awaitility)
-
-
-## Feature junit-params documentation
-
-
-- [https://junit.org/junit5/docs/current/user-guide/#writing-tests-parameterized-tests](https://junit.org/junit5/docs/current/user-guide/#writing-tests-parameterized-tests)
-
-
-## Feature maven-enforcer-plugin documentation
-
-
-- [https://maven.apache.org/enforcer/maven-enforcer-plugin/](https://maven.apache.org/enforcer/maven-enforcer-plugin/)
-
-
+# SLP — Sistema de Leilão de Porquinhos
+
+Enunciado: [NEGOCIO.md](NEGOCIO.md) · Estratégia: [ESTRATEGIA.md](ESTRATEGIA.md) · Requisitos: [REQUISITOS.md](REQUISITOS.md) · Contratos: [contracts/](contracts/README.md) · Uso de IA: [docs/ia/](docs/ia/README.md)
+
+## Estrutura
+
+Um único projeto Micronaut com **3 módulos hexagonais** (um por dev) que se comunicam **somente por eventos Kafka**.
+
+```
+src/main/java/co/inter/piggies/
+├── Application.java
+├── contracts/      ← Topics + records das mensagens Kafka (espelho de contracts/events/*.schema.json)
+├── shared/         ← infra comum: OutboxWriter, OutboxRelay, SlpProducer, TransactionRunner,
+│                     ProcessedEventRepository (idempotência por consumidor), ClockFactory
+├── buyer/          ← Dev 1   domain / application / adapter (rest, kafka, persistence, messaging)
+├── seller/         ← Dev 2   mesma estrutura do buyer
+└── coordinator/    ← Dev 3   domain / application / adapter (kafka, persistence, messaging)
+src/main/resources/db/migration/V1__create_schema.sql   ← tabelas dos 3 módulos + outbox + processed_events
+src/test/java/co/inter/piggies/support/                 ← Containers, IntegrationTest, KafkaTestClient
+```
+
+| Módulo | Pacote | Tabelas (V1) | Consumer group |
+|---|---|---|---|
+| Buyer | `co.inter.piggies.buyer` | `buy_offers` | `slp-buyer` |
+| Seller | `co.inter.piggies.seller` | `sell_offers` | `slp-seller` |
+| Coordinator | `co.inter.piggies.coordinator` | `offers`, `trades`, `wallet_entries` | `slp-coordinator` |
+| shared | `co.inter.piggies.shared` | `outbox`, `processed_events` | — |
+
+Stack: Java 25, Micronaut 5.1.5, Maven, Micronaut Data JPA, PostgreSQL 16, Flyway, Kafka (apache/kafka-native 4.3.1), JUnit 5, AssertJ, Awaitility, Testcontainers.
+
+## Rodar
+
+```bash
+podman compose up -d     # Postgres + Kafka
+./mvnw mn:run            # porta 8080
+./mvnw test              # o Testcontainers sobe Postgres e Kafka
+```
+
+Com Podman no Windows, o Testcontainers precisa enxergar o socket: `podman machine` rodando e, se necessário, `TESTCONTAINERS_RYUK_DISABLED=true`.

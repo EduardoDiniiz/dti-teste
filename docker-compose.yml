@@ -1,0 +1,16 @@
+# Ambiente local do SLP: um Postgres + um Kafka (KRaft, sem ZooKeeper).
+# Subir: podman compose up -d   (ou docker compose up -d)
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: slp
+      POSTGRES_PASSWORD: slp
+      POSTGRES_DB: slp
+    ports:
+      - "5432:5432"
+
+  kafka:
+    image: apache/kafka-native:4.3.1
+    ports:
+      - "9092:9092"

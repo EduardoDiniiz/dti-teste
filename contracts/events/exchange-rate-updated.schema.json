@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "slp.exchange-rate.updated",
+  "title": "ExchangeRateUpdated",
+  "description": "Nova taxa de câmbio USD/Piggy publicada pelo Coordinator após cada transação.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "tradeId", "pair", "rate", "occurredAt"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid" },
+    "tradeId": { "type": "string", "format": "uuid" },
+    "pair": { "type": "string", "const": "PIGGY-USD" },
+    "rate": { "type": "number", "exclusiveMinimum": 0, "multipleOf": 0.01, "description": "USD por 1 Piggy" },
+    "occurredAt": { "type": "string", "format": "date-time" }
+  }
+}
