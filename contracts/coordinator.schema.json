@@ -1,64 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "PiggiesTransactionCoordinator",
-  "description": "Contrato dos eventos ACEITOS como entrada pelo Coordinator; sem endpoints HTTP públicos. Saídas referenciadas em x-publishedEvents. Metadados x-* são documentação, não configuração automática de Kafka.",
-  "oneOf": [
-    {
-      "$ref": "events/buy-offer-created.schema.json"
-    },
-    {
-      "$ref": "events/sell-offer-created.schema.json"
+  "description": "Contrato ativo conforme REQUISITOS.md e contracts/README.md. Entrada OfferCreated; sem endpoints HTTP. x-* documentam saídas e não são configuração automática.",
+  "$ref": "events/offer-created.schema.json",
+  "x-consumedEvents": {
+    "OfferCreated": {
+      "schema": "events/offer-created.schema.json",
+      "topic": "slp.offers.created",
+      "key": "PIGGY-USD",
+      "group": "slp-coordinator"
     }
-  ],
+  },
   "x-publishedEvents": {
-    "TransactionCompleted": {
-      "schema": "events/transaction-completed.schema.json",
-      "topic": "slp.transactions.v1",
-      "key": "payload.transactionId",
-      "producer": "PiggiesTransactionCoordinator",
-      "consumers": [
-        "PiggiesBuyerService",
-        "PiggiesSellerService"
-      ]
-    },
-    "OfferRejected": {
-      "schema": "events/offer-rejected.schema.json",
-      "topic": "slp.offer-rejections.v1",
-      "key": "payload.side + : + payload.offerId",
-      "producer": "PiggiesTransactionCoordinator",
-      "consumers": [
-        "PiggiesBuyerService",
-        "PiggiesSellerService"
-      ]
+    "TradeExecuted": {
+      "schema": "events/trade-executed.schema.json",
+      "topic": "slp.trades.executed",
+      "key": "tradeId"
     },
     "ExchangeRateUpdated": {
       "schema": "events/exchange-rate-updated.schema.json",
-      "topic": "slp.exchange-rates.v1",
-      "key": "PIGGY-USD",
-      "producer": "PiggiesTransactionCoordinator",
-      "consumers": [
-        "Sistemas externos interessados"
-      ]
-    }
-  },
-  "x-consumedEvents": {
-    "BuyOfferCreated": {
-      "schema": "events/buy-offer-created.schema.json",
-      "topic": "slp.offers.v1",
-      "key": "PIGGY-USD",
-      "producer": "PiggiesBuyerService",
-      "consumers": [
-        "PiggiesTransactionCoordinator"
-      ]
-    },
-    "SellOfferCreated": {
-      "schema": "events/sell-offer-created.schema.json",
-      "topic": "slp.offers.v1",
-      "key": "PIGGY-USD",
-      "producer": "PiggiesSellerService",
-      "consumers": [
-        "PiggiesTransactionCoordinator"
-      ]
+      "topic": "slp.exchange-rate.updated",
+      "key": "PIGGY-USD"
     }
   }
 }
