@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ExchangeRateUpdated",
+  "title": "OfferRejected",
   "description": "Evento v1. Deduplicar por eventId; retries preservam ID, data e payload. Regras entre campos exigem testes de negócio.",
   "type": "object",
   "additionalProperties": false,
@@ -10,7 +10,7 @@
       "format": "uuid"
     },
     "eventType": {
-      "const": "ExchangeRateUpdated"
+      "const": "OfferRejected"
     },
     "schemaVersion": {
       "const": 1
@@ -23,31 +23,33 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "transactionId": {
+        "offerId": {
           "type": "string",
           "format": "uuid"
         },
-        "baseCurrency": {
-          "const": "PIGGY"
+        "side": {
+          "enum": [
+            "BUY",
+            "SELL"
+          ]
         },
-        "quoteCurrency": {
-          "const": "USD"
-        },
-        "rate": {
+        "reasonCode": {
           "type": "string",
-          "pattern": "^(?!0(?:\\.0{1,3})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,3})?$",
-          "description": "USD positivo; até 12 dígitos inteiros e 3 casas decimais; sem expoente. Converter com BigDecimal."
+          "enum": [
+            "INSUFFICIENT_PIGGY_BALANCE",
+            "PARTICIPANT_NOT_FOUND"
+          ]
         },
-        "quantity": {
-          "const": 1
+        "reason": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [
-        "transactionId",
-        "baseCurrency",
-        "quoteCurrency",
-        "rate",
-        "quantity"
+        "offerId",
+        "side",
+        "reasonCode",
+        "reason"
       ]
     }
   },
@@ -61,15 +63,14 @@
   "examples": [
     {
       "eventId": "44444444-4444-4444-8444-444444444444",
-      "eventType": "ExchangeRateUpdated",
+      "eventType": "OfferRejected",
       "schemaVersion": 1,
       "occurredAt": "2026-09-28T18:00:00Z",
       "payload": {
-        "transactionId": "33333333-3333-4333-8333-333333333333",
-        "baseCurrency": "PIGGY",
-        "quoteCurrency": "USD",
-        "rate": "25.000",
-        "quantity": 1
+        "offerId": "22222222-2222-4222-8222-222222222222",
+        "side": "SELL",
+        "reasonCode": "INSUFFICIENT_PIGGY_BALANCE",
+        "reason": "Vendedor não possui 1 Piggy disponível."
       }
     }
   ]

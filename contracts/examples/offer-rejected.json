@@ -1,0 +1,12 @@
+{
+  "eventId": "44444444-4444-4444-8444-444444444444",
+  "eventType": "OfferRejected",
+  "schemaVersion": 1,
+  "occurredAt": "2026-09-28T18:00:00Z",
+  "payload": {
+    "offerId": "22222222-2222-4222-8222-222222222222",
+    "side": "SELL",
+    "reasonCode": "INSUFFICIENT_PIGGY_BALANCE",
+    "reason": "Vendedor não possui 1 Piggy disponível."
+  }
+}

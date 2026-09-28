@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ExchangeRateUpdated",
+  "title": "BuyOfferCreated",
   "description": "Evento v1. Deduplicar por eventId; retries preservam ID, data e payload. Regras entre campos exigem testes de negócio.",
   "type": "object",
   "additionalProperties": false,
@@ -10,7 +10,7 @@
       "format": "uuid"
     },
     "eventType": {
-      "const": "ExchangeRateUpdated"
+      "const": "BuyOfferCreated"
     },
     "schemaVersion": {
       "const": 1
@@ -23,31 +23,29 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "transactionId": {
+        "offerId": {
           "type": "string",
           "format": "uuid"
         },
-        "baseCurrency": {
-          "const": "PIGGY"
-        },
-        "quoteCurrency": {
-          "const": "USD"
-        },
-        "rate": {
+        "buyerId": {
           "type": "string",
-          "pattern": "^(?!0(?:\\.0{1,3})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,3})?$",
-          "description": "USD positivo; até 12 dígitos inteiros e 3 casas decimais; sem expoente. Converter com BigDecimal."
+          "format": "uuid"
         },
-        "quantity": {
-          "const": 1
+        "priceUsd": {
+          "type": "string",
+          "pattern": "^(?!0(?:\\.0{1,2})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,2})?$",
+          "description": "USD positivo; até 12 dígitos inteiros e 2 casas decimais; sem expoente. Converter com BigDecimal."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": [
-        "transactionId",
-        "baseCurrency",
-        "quoteCurrency",
-        "rate",
-        "quantity"
+        "offerId",
+        "buyerId",
+        "priceUsd",
+        "createdAt"
       ]
     }
   },
@@ -61,15 +59,14 @@
   "examples": [
     {
       "eventId": "44444444-4444-4444-8444-444444444444",
-      "eventType": "ExchangeRateUpdated",
+      "eventType": "BuyOfferCreated",
       "schemaVersion": 1,
       "occurredAt": "2026-09-28T18:00:00Z",
       "payload": {
-        "transactionId": "33333333-3333-4333-8333-333333333333",
-        "baseCurrency": "PIGGY",
-        "quoteCurrency": "USD",
-        "rate": "25.000",
-        "quantity": 1
+        "offerId": "11111111-1111-4111-8111-111111111111",
+        "buyerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "priceUsd": "30.00",
+        "createdAt": "2026-09-28T18:00:00Z"
       }
     }
   ]

@@ -1,0 +1,17 @@
+{
+  "eventId": "44444444-4444-4444-8444-444444444444",
+  "eventType": "TransactionCompleted",
+  "schemaVersion": 1,
+  "occurredAt": "2026-09-28T18:00:00Z",
+  "payload": {
+    "transactionId": "33333333-3333-4333-8333-333333333333",
+    "buyOfferId": "11111111-1111-4111-8111-111111111111",
+    "sellOfferId": "22222222-2222-4222-8222-222222222222",
+    "buyerId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "sellerId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "buyPriceUsd": "30.00",
+    "sellPriceUsd": "20.00",
+    "executionPriceUsd": "25.000",
+    "quantity": 1
+  }
+}

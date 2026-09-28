@@ -1,0 +1,457 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PiggiesSellerService",
+    "version": "1.0.0",
+    "description": "PROPOSTA contract-first. Implementação ainda não existe. Ver docs/SLP-CONTRATOS.md para decisões e garantias."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8082",
+      "description": "Porta local proposta; precisa ser configurada na implementação."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Offers"
+    }
+  ],
+  "paths": {
+    "/sell-offers": {
+      "post": {
+        "tags": [
+          "Offers"
+        ],
+        "operationId": "createSellOffer",
+        "summary": "Aceitar oferta de 1 Piggy para processamento assíncrono",
+        "description": "Persistir oferta e outbox atomicamente antes de 202. Não aguardar match. Repetição idêntica retorna 200 com estado atual e não cria outro evento lógico. Comparar preço numericamente (30, 30.0 e 30.00 são equivalentes). Mesmo ID com outro participante/preço retorna 409. offerId tem escopo por serviço; identidade global é side + offerId.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOffer"
+              },
+              "example": {
+                "offerId": "22222222-2222-4222-8222-222222222222",
+                "sellerId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                "priceUsd": "20.00"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Oferta e evento pendente persistidos; não significa execução concluída.",
+            "headers": {
+              "Location": {
+                "required": true,
+                "description": "URL relativa para consultar a oferta",
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                },
+                "example": "/sell-offers/22222222-2222-4222-8222-222222222222"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedOffer"
+                },
+                "example": {
+                  "offerId": "22222222-2222-4222-8222-222222222222",
+                  "status": "PENDING",
+                  "statusUrl": "/sell-offers/22222222-2222-4222-8222-222222222222"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Repetição idêntica; estado atual da oferta existente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Offer"
+                },
+                "example": {
+                  "offerId": "22222222-2222-4222-8222-222222222222",
+                  "sellerId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                  "priceUsd": "20.00",
+                  "createdAt": "2026-09-28T18:00:00Z",
+                  "status": "PENDING"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON, UUID ou preço inválido; campos desconhecidos não são aceitos.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "JSON, UUID ou preço inválido; campos desconhecidos não são aceitos.",
+                  "status": 400,
+                  "detail": "JSON, UUID ou preço inválido; campos desconhecidos não são aceitos.",
+                  "code": "INVALID_REQUEST"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "offerId já utilizado com participante ou preço diferente.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "offerId já utilizado com participante ou preço diferente.",
+                  "status": 409,
+                  "detail": "offerId já utilizado com participante ou preço diferente.",
+                  "code": "OFFER_ID_CONFLICT"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Aceitação não confirmada; repetir os mesmos dados e offerId. A resposta pode ser incerta após falha de rede.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Aceitação não confirmada; repetir os mesmos dados e offerId. A resposta pode ser incerta após falha de rede.",
+                  "status": 503,
+                  "detail": "Aceitação não confirmada; repetir os mesmos dados e offerId. A resposta pode ser incerta após falha de rede.",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sell-offers/{offerId}": {
+      "get": {
+        "tags": [
+          "Offers"
+        ],
+        "operationId": "getSellOffer",
+        "summary": "Consultar oferta e resultado eventual",
+        "description": "PENDING inclui evento pendente de publicação e oferta aguardando match. Não há prazo garantido para match. Estados terminais não regridem. Não recebe body.",
+        "parameters": [
+          {
+            "name": "offerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado atual; atualização por eventos é eventualmente consistente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Offer"
+                },
+                "example": {
+                  "offerId": "22222222-2222-4222-8222-222222222222",
+                  "sellerId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                  "priceUsd": "20.00",
+                  "createdAt": "2026-09-28T18:00:00Z",
+                  "status": "EXECUTED",
+                  "transactionId": "33333333-3333-4333-8333-333333333333",
+                  "executionPriceUsd": "25.000"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON, UUID ou preço inválido; campos desconhecidos não são aceitos.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "JSON, UUID ou preço inválido; campos desconhecidos não são aceitos.",
+                  "status": 400,
+                  "detail": "JSON, UUID ou preço inválido; campos desconhecidos não são aceitos.",
+                  "code": "INVALID_REQUEST"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Oferta inexistente.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Oferta inexistente.",
+                  "status": 404,
+                  "detail": "Oferta inexistente.",
+                  "code": "OFFER_NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Consulta temporariamente indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Consulta temporariamente indisponível.",
+                  "status": 503,
+                  "detail": "Consulta temporariamente indisponível.",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateOffer": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "offerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sellerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priceUsd": {
+            "type": "string",
+            "pattern": "^(?!0(?:\\.0{1,2})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,2})?$",
+            "description": "USD positivo; até 12 dígitos inteiros e 2 casas decimais; sem expoente. Converter com BigDecimal."
+          }
+        },
+        "required": [
+          "offerId",
+          "sellerId",
+          "priceUsd"
+        ]
+      },
+      "AcceptedOffer": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "offerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "const": "PENDING"
+          },
+          "statusUrl": {
+            "type": "string",
+            "format": "uri-reference",
+            "pattern": "^/sell-offers/[0-9a-fA-F-]{36}$"
+          }
+        },
+        "required": [
+          "offerId",
+          "status",
+          "statusUrl"
+        ]
+      },
+      "Offer": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/PendingOffer"
+          },
+          {
+            "$ref": "#/components/schemas/ExecutedOffer"
+          },
+          {
+            "$ref": "#/components/schemas/RejectedOffer"
+          }
+        ]
+      },
+      "PendingOffer": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "offerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sellerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priceUsd": {
+            "type": "string",
+            "pattern": "^(?!0(?:\\.0{1,2})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,2})?$",
+            "description": "USD positivo; até 12 dígitos inteiros e 2 casas decimais; sem expoente. Converter com BigDecimal."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "const": "PENDING"
+          }
+        },
+        "required": [
+          "offerId",
+          "sellerId",
+          "priceUsd",
+          "createdAt",
+          "status"
+        ]
+      },
+      "ExecutedOffer": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "offerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sellerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priceUsd": {
+            "type": "string",
+            "pattern": "^(?!0(?:\\.0{1,2})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,2})?$",
+            "description": "USD positivo; até 12 dígitos inteiros e 2 casas decimais; sem expoente. Converter com BigDecimal."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "const": "EXECUTED"
+          },
+          "transactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "executionPriceUsd": {
+            "type": "string",
+            "pattern": "^(?!0(?:\\.0{1,3})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,3})?$",
+            "description": "USD positivo; até 12 dígitos inteiros e 3 casas decimais; sem expoente. Converter com BigDecimal."
+          }
+        },
+        "required": [
+          "offerId",
+          "sellerId",
+          "priceUsd",
+          "createdAt",
+          "status",
+          "transactionId",
+          "executionPriceUsd"
+        ]
+      },
+      "RejectedOffer": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "offerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sellerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "priceUsd": {
+            "type": "string",
+            "pattern": "^(?!0(?:\\.0{1,2})?$)(?:0|[1-9][0-9]{0,11})(?:\\.[0-9]{1,2})?$",
+            "description": "USD positivo; até 12 dígitos inteiros e 2 casas decimais; sem expoente. Converter com BigDecimal."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "const": "REJECTED"
+          },
+          "rejectionCode": {
+            "type": "string",
+            "enum": [
+              "INSUFFICIENT_PIGGY_BALANCE",
+              "PARTICIPANT_NOT_FOUND"
+            ]
+          },
+          "rejectionReason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "offerId",
+          "sellerId",
+          "priceUsd",
+          "createdAt",
+          "status",
+          "rejectionCode",
+          "rejectionReason"
+        ]
+      },
+      "Problem": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri-reference"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "detail": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string",
+            "format": "uri-reference"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "code"
+        ]
+      }
+    }
+  }
+}
