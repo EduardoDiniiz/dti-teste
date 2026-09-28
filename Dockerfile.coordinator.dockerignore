@@ -1,0 +1,4 @@
+**
+!target/
+!target/slp-0.1.jar
+!Dockerfile.coordinator
